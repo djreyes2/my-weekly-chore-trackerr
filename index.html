@@ -1,0 +1,364 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Chore Tracker</title>
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 28px 18px;
+  background: #f2f5f2;
+  color: #19251f;
+  font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.eyebrow {
+  color: #718078;
+  letter-spacing: 3px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+h1 { font-size: 30px; margin: 12px 0; }
+
+h2 { font-size: 23px; margin: 25px 0 15px; }
+
+.card {
+  background: white;
+  border: 1px solid #e0e8e2;
+  border-radius: 25px;
+  padding: 22px;
+  margin-bottom: 22px;
+  box-shadow: 0 5px 20px #18251f08;
+}
+
+.progress-number {
+  color: #27805a;
+  font-size: 38px;
+  font-weight: bold;
+}
+
+.progress-track {
+  height: 12px;
+  background: #eaf0eb;
+  border-radius: 20px;
+  overflow: hidden;
+  margin: 15px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #27805a;
+  transition: width .2s;
+}
+
+button, select, input {
+  font: inherit;
+}
+
+button {
+  border: none;
+  border-radius: 15px;
+  padding: 14px 20px;
+  background: #27805a;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.reset {
+  background: #eaf1ec;
+  color: #19251f;
+  margin-top: 8px;
+}
+
+.task {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 15px 4px;
+  border-bottom: 1px solid #edf0ed;
+  font-size: 16px;
+}
+
+.task:last-child { border-bottom: none; }
+
+.task input[type="checkbox"] {
+  width: 23px;
+  height: 23px;
+  accent-color: #27805a;
+  flex-shrink: 0;
+}
+
+.task.done span {
+  text-decoration: line-through;
+  color: #8a968e;
+}
+
+.day-label {
+  color: #27805a;
+  font-weight: bold;
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+
+.add-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+input[type="text"], select {
+  width: 100%;
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #dce5de;
+  border-radius: 14px;
+  background: white;
+  color: #19251f;
+}
+
+.add-row button { flex-shrink: 0; }
+
+footer {
+  text-align: center;
+  color: #718078;
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 20px;
+}
+
+.delete {
+  margin-left: auto;
+  background: #f7eaea;
+  color: #a13c3c;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="eyebrow">YOUR HOME • YOUR ROUTINE</div>
+    <h1>My Chore Tracker</h1>
+  </div>
+  <div style="font-size:32px">✓</div>
+</header>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <strong>This week's progress</strong>
+    <span class="progress-number" id="percentage">0%</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progress"></div>
+  </div>
+  <div id="count" style="color:#718078">0 of 0 chores completed</div>
+  <button class="reset" id="reset">Reset this week</button>
+</div>
+
+<h2>Daily chores</h2>
+<div class="card" id="daily"></div>
+
+<h2>Weekly chores</h2>
+<div id="weekly"></div>
+
+<div class="card">
+  <h2 style="margin-top:0">Add your own chore</h2>
+  <p style="color:#718078">Add a task to a day and it will become part of your weekly checklist.</p>
+  <div class="add-row">
+    <input id="newChore" type="text" placeholder="Example: Clean your room">
+    <button id="add">Add</button>
+  </div>
+  <div style="margin-top:12px">
+    <select id="day">
+      <option>Monday</option>
+      <option>Tuesday</option>
+      <option>Wednesday</option>
+      <option>Thursday</option>
+      <option>Friday</option>
+      <option>Saturday</option>
+      <option>Sunday</option>
+    </select>
+  </div>
+</div>
+
+<footer>
+  Your checklist saves automatically on this device.<br>
+  Tip: Use "Reset this week" when you want to start fresh.
+</footer>
+
+<script>
+const days = [
+  "Monday", "Tuesday", "Wednesday",
+  "Thursday", "Friday", "Saturday", "Sunday"
+];
+
+const dailyTasks = [
+  "Make your bed",
+  "Tidy your room",
+  "Put away clothes",
+  "Wipe down counters"
+];
+
+const defaultWeekly = {
+  Monday: ["Clean your room", "Dust furniture", "Gym"],
+  Tuesday: ["Clean bathroom", "Sweep floors", "Gym"],
+  Wednesday: ["Take out trash", "Skim pool", "Sweep pool"],
+  Thursday: ["Mop floors", "Clean counters", "Gym"],
+  Friday: ["Do laundry", "Wash dogs"],
+  Saturday: ["Clean bathroom", "Dust furniture", "Skim pool"],
+  Sunday: ["Mop floors", "Organize room", "Sweep pool"]
+};
+
+const storageKey = "myChoreTrackerV2";
+
+let data = {
+  weekly: JSON.parse(JSON.stringify(defaultWeekly)),
+  checked: {},
+  custom: []
+};
+
+try {
+  const saved = JSON.parse(localStorage.getItem(storageKey));
+  if (saved) data = {...data, ...saved};
+} catch(e) {}
+
+function save() {
+  localStorage.setItem(storageKey, JSON.stringify(data));
+}
+
+function render() {
+  const daily = document.getElementById("daily");
+  const weekly = document.getElementById("weekly");
+
+  daily.innerHTML = "";
+  weekly.innerHTML = "";
+
+  dailyTasks.forEach((task, i) => {
+    daily.appendChild(makeTask("daily-" + i, task, false));
+  });
+
+  days.forEach(day => {
+    const heading = document.createElement("div");
+    heading.className = "day-label";
+    heading.textContent = day;
+    weekly.appendChild(heading);
+
+    (data.weekly[day] || []).forEach((task, i) => {
+      const id = day + "-" + i;
+      const row = makeTask(id, task, true);
+      weekly.appendChild(row);
+    });
+  });
+
+  updateProgress();
+}
+
+function makeTask(id, task, canDelete) {
+  const row = document.createElement("div");
+  row.className = "task" + (data.checked[id] ? " done" : "");
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = !!data.checked[id];
+  checkbox.dataset.id = id;
+
+  const label = document.createElement("span");
+  label.textContent = task;
+  label.style.flex = "1";
+
+  row.appendChild(checkbox);
+  row.appendChild(label);
+
+  if (canDelete && data.custom.includes(id)) {
+    const del = document.createElement("button");
+    del.className = "delete";
+    del.textContent = "Delete";
+    del.dataset.delete = id;
+    row.appendChild(del);
+  }
+
+  return row;
+}
+
+function updateProgress() {
+  const boxes = document.querySelectorAll(
+    '.task input[type="checkbox"]'
+  );
+  const total = boxes.length;
+  const done = [...boxes].filter(box => box.checked).length;
+  const percent = total ? Math.round(done / total * 100) : 0;
+
+  document.getElementById("percentage").textContent = percent + "%";
+  document.getElementById("progress").style.width = percent + "%";
+  document.getElementById("count").textContent =
+    done + " of " + total + " chores completed";
+}
+
+document.addEventListener("change", function(e) {
+  if (e.target.matches('input[type="checkbox"][data-id]')) {
+    data.checked[e.target.dataset.id] = e.target.checked;
+    save();
+    render();
+  }
+});
+
+document.addEventListener("click", function(e) {
+  const id = e.target.dataset.delete;
+  if (!id) return;
+
+  const [day, index] = [id.substring(0, id.lastIndexOf("-")),
+    Number(id.substring(id.lastIndexOf("-") + 1))];
+
+  if (!confirm("Delete this chore?")) return;
+
+  data.weekly[day].splice(index, 1);
+  data.custom = data.custom.filter(x => x !== id);
+  data.checked = {};
+  save();
+  render();
+});
+
+document.getElementById("add").addEventListener("click", function() {
+  const input = document.getElementById("newChore");
+  const task = input.value.trim();
+  const day = document.getElementById("day").value;
+
+  if (!task) {
+    alert("Please enter a chore first.");
+    return;
+  }
+
+  if (!data.weekly[day]) data.weekly[day] = [];
+  data.weekly[day].push(task);
+  input.value = "";
+  save();
+  render();
+});
+
+document.getElementById("reset").addEventListener("click", function() {
+  if (!confirm("Reset all completed chores for this week?")) return;
+  data.checked = {};
+  save();
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
